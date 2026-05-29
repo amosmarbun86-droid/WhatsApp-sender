@@ -119,7 +119,7 @@ logRef.on("value", (snapshot) => {
     }
 });
 
-// FUNGSI UNTUK MERENDER GELEMBUNG BALON CHAT (BUBBLE CHAT)
+// FUNGSI UNTUK MERENDER GELEMBUNG BALON CHAT (BUBBLE CHAT) - UPDATE PREVIEW MEDIA
 function renderBalonChat(nomor) {
     const bubbleContainer = document.getElementById("chatBubbleContainer");
     if (!bubbleContainer) return;
@@ -131,17 +131,47 @@ function renderBalonChat(nomor) {
         const isPesanMasuk = msg.status.includes("📥") || msg.status === "📥 PESAN MASUK";
         
         const wrapper = document.createElement("div");
-        // Kondisional Layout Posisi: Kiri untuk pesan masuk, Kanan untuk pesan balasan keluar
         wrapper.className = `flex w-full ${isPesanMasuk ? 'justify-start' : 'justify-end'}`;
 
         const bubble = document.createElement("div");
-        bubble.className = `max-w-[80%] p-3 rounded-2xl text-xs shadow-md flex flex-col gap-1 ${
+        bubble.className = `max-w-[80%] p-3 rounded-2xl text-xs shadow-md flex flex-col gap-2 ${
             isPesanMasuk 
             ? 'bg-slate-800 text-slate-200 rounded-tl-none border border-slate-700/50' 
             : 'bg-green-600 text-white rounded-tr-none'
         }`;
 
-        // Set status centang indikator balasan
+        // --- SISTEM DETEKSI OTOMATIS LINK GAMBAR / VIDEO ---
+        let isiPesan = msg.pesan || '';
+        let mediaHTML = '';
+
+        // Regex pendeteksi URL HTTP/HTTPS
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const urlsFound = isiPesan.match(urlRegex);
+
+        if (urlsFound) {
+            urlsFound.forEach(url => {
+                const cleanUrl = url.trim();
+                
+                // Cek apakah URL mengarah ke format gambar atau Cloudinary
+                if (cleanUrl.match(/\.(jpeg|jpg|gif|png|webp)/i) || (cleanUrl.includes("cloudinary.com") && !cleanUrl.match(/\.(mp4|webm|ogg|mov)/i))) {
+                    mediaHTML += `
+                        <div class="mt-1 rounded-lg overflow-hidden border border-white/10 bg-black/20">
+                            <img src="${cleanUrl}" class="max-w-full h-auto object-cover max-h-60 mx-auto cursor-pointer" onclick="window.open('${cleanUrl}', '_blank')" alt="Media">
+                        </div>`;
+                    isiPesan = isiPesan.replace(url, ''); // Hapus teks link mentah agar rapi
+                } 
+                // Cek apakah URL mengarah ke format video
+                else if (cleanUrl.match(/\.(mp4|webm|ogg|mov)/i)) {
+                    mediaHTML += `
+                        <div class="mt-1 rounded-lg overflow-hidden border border-white/10 bg-black/20">
+                            <video src="${cleanUrl}" controls class="max-w-full max-h-60 mx-auto"></video>
+                        </div>`;
+                    isiPesan = isiPesan.replace(url, ''); // Hapus teks link mentah agar rapi
+                }
+            });
+        }
+        // ----------------------------------------------------
+
         let centangStatus = "✓";
         if (msg.status.includes("✅") || msg.status === "✅ Berhasil") {
             centangStatus = "✓✓";
@@ -149,8 +179,10 @@ function renderBalonChat(nomor) {
             centangStatus = "⚠️";
         }
 
+        // Gabungkan preview media di atas teks pesan
         bubble.innerHTML = `
-            <div class="break-words leading-relaxed text-[11px]">${msg.pesan || ''}</div>
+            ${mediaHTML}
+            <div class="break-words leading-relaxed text-[11px]">${isiPesan.trim() || (mediaHTML ? '' : '-')}</div>
             <div class="text-[8px] self-end mt-1 font-mono opacity-60 flex items-center gap-1 select-none">
                 <span>${msg.waktu}</span>
                 <span>${isPesanMasuk ? '' : centangStatus}</span>
@@ -161,11 +193,11 @@ function renderBalonChat(nomor) {
         bubbleContainer.appendChild(wrapper);
     });
 
-    // OPTIMASI SCROLL: Penyesuaian waktu tunda (100ms) untuk memastikan DOM selesai merender list panjang sebelum digulir penuh ke bawah
     setTimeout(() => {
         bubbleContainer.scrollTop = bubbleContainer.scrollHeight;
     }, 100);
 }
+
 // =============================================================================================
 
 
