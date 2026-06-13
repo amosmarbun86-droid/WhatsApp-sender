@@ -11,6 +11,13 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      # 🌟 LANGKAH KRASIAL: Set versi Java agar cocok dengan Gradle & Cordova terbaru
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -19,30 +26,39 @@ jobs:
       - name: Install Cordova
         run: npm install -g cordova
 
-      - name: Create Cordova project
+      # 🛠️ STRUKTUR BARU: Menyusun file langsung di root tanpa folder 'app' bercabang
+      - name: Setup Cordova Project Structure
         run: |
-          # 1. Buat project Cordova baru
-          cordova create app com.wasender.app WASender
+          # 1. Buat folder temporary untuk mengamankan file asli kamu
+          mkdir temp_src
           
-          # 2. Kosongkan folder www bawaan Cordova
-          rm -rf app/www/*
+          # 2. Pindahkan seluruh isi repositori ke folder aman tersebut
+          mv * temp_src/ 2>/dev/null || true
           
-          # 3. Salin semua file utama (index, script, style, icon) tanpa menyalin folder 'app' itu sendiri
-          find . -maxdepth 1 -type f -exec cp {} app/www/ \;
+          # 3. Inisialisasi proyek Cordova langsung di root (.)
+          cordova create . com.wasender.app WASender
           
-          # 4. Letakkan config.xml di folder utama aplikasi Cordova
-          cp config.xml app/config.xml || true
+          # 4. Bersihkan folder 'www' bawaan Cordova yang masih kosong
+          rm -rf www/*
+          
+          # 5. Masukkan seluruh file aplikasi kamu (termasuk icon.png) ke folder www
+          cp -r temp_src/* www/
+          
+          # 6. Tarik config.xml ke luar (root) agar dibaca langsung oleh sistem Cordova
+          mv www/config.xml ./config.xml || true
+          
+          # 7. Hapus folder temporary karena sudah tidak digunakan
+          rm -rf temp_src
 
       - name: Build APK
         run: |
-          cd app
           cordova platform add android
           cordova plugin add cordova-plugin-local-notification
           cordova build android
 
+      # 📦 OUTPUT PATH: Jalur file APK menjadi jauh lebih pendek dan terbaca sempurna
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: WASender-APK
-          path: app/platforms/android/app/build/outputs/apk/debug/*.apk
-          
+          path: platforms/android/app/build/outputs/apk/debug/*.apk
