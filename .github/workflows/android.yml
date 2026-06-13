@@ -21,9 +21,16 @@ jobs:
 
       - name: Create Cordova project
         run: |
+          # 1. Buat project Cordova baru
           cordova create app com.wasender.app WASender
+          
+          # 2. Kosongkan folder www bawaan Cordova
           rm -rf app/www/*
-          cp -r * app/www/ || true
+          
+          # 3. Salin semua file utama (index, script, style, icon) tanpa menyalin folder 'app' itu sendiri
+          find . -maxdepth 1 -type f -exec cp {} app/www/ \;
+          
+          # 4. Letakkan config.xml di folder utama aplikasi Cordova
           cp config.xml app/config.xml || true
 
       - name: Build APK
