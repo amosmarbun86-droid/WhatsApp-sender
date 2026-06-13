@@ -8,6 +8,8 @@
 
     <content src="index.html" />
 
+    <icon src="www/icon.png" />
+
     <access origin="*" />
     <allow-navigation href="*" />
     <allow-intent href="*" />
@@ -18,9 +20,9 @@
     <preference name="BackupWebStorage" value="none" />
 
     <config-file target="AndroidManifest.xml" parent="/*">
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.VIBRATE" />
+        <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+        <uses-permission android:name="android.permission.VIBRATE" />
     </config-file>
-    
 
 </widget>
+b
