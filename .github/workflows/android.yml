@@ -24,11 +24,13 @@ jobs:
           cordova create app com.wasender.app WASender
           rm -rf app/www/*
           cp -r * app/www/ || true
+          cp config.xml app/config.xml || true
 
       - name: Build APK
         run: |
           cd app
           cordova platform add android
+          cordova plugin add cordova-plugin-local-notification
           cordova build android
 
       - name: Upload APK
@@ -36,3 +38,4 @@ jobs:
         with:
           name: WASender-APK
           path: app/platforms/android/app/build/outputs/apk/debug/*.apk
+          
