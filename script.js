@@ -25,7 +25,6 @@ const firebaseConfig = {
   appId: _0xdecode("MTozOTc3NDEyMDA4ODA6d2ViOmEyZWI2MGIxNTM3OGM2MTQzODM5MzU=")
 };
 
-
 // Inisialisasi Aplikasi Firebase & Database Reference
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -279,6 +278,7 @@ function renderKontak(kontakFilter = null) {
     });
 }
 
+// Filter Kontak berdasarkan pencarian
 function filterKontak() {
     const keyword = document.getElementById("searchKontak").value.toLowerCase().trim();
     if (keyword === "") {
@@ -339,7 +339,6 @@ function hapusSemuaKontak() {
     }
 }
 
-// Menghubungkan trigger otomatis isi data input nomor dari dropdown lama Anda
 function isiNomor() {
     let i = document.getElementById("kontakSelect").value;
     if (i !== "" && kontak[i]) document.getElementById("nomor").value = kontak[i].nomor;
@@ -574,7 +573,6 @@ function handleQuickReplyKeyPress(event) {
     }
 }
 
-// FUNGSI UTK REFRESH MANUAL DATA CHAT MASUK DARI FIREBASE
 function manualRefreshChat() {
     const icon = document.getElementById("iconRefresh");
     if (icon) {
@@ -593,12 +591,38 @@ function manualRefreshChat() {
     });
 }
 
-// FUNGSI UNTUK MEMICU SUARA NOTIFIKASI DI DALAM APK ANDROID
+// 🔔 FUNGSI FINAL: MEMICU SUARA & NOTIFIKASI DI ANDROID APK MAUPUN BROWSER LAPTOP
 function mainkanNotifikasi(nomor, pesan) {
-    if (audioNotif) {
-        audioNotif.play().catch(err => console.log("Gagal memutar audio di APK:", err));
+    // Cari nama pengirim asli dari kontak terdaftar agar tidak muncul nomor mentah
+    const kontakDitemukan = kontak.find(k => k.nomor.replace(/\D/g, '') === nomor.replace(/\D/g, ''));
+    const namaTampilan = kontakDitemukan ? kontakDitemukan.nama : `+${nomor}`;
+
+    // 📱 1. MODE CORDOVA (APLIKASI HP ANDROID)
+    if (window.cordova && cordova.plugins && cordova.plugins.notification) {
+        cordova.plugins.notification.local.schedule({
+            id: 1,
+            title: "💬 Pesan Masuk Baru",
+            text: `${namaTampilan}: ${pesan}`,
+            foreground: true, // Notifikasi pop-up tetap mencuat meski APK sedang dibuka aktif
+            vibrate: true,    // Getarkan HP
+            sound: true       // Bunyikan ringtone default HP
+        });
+        console.log(`Notifikasi System APK sukses dipicu untuk: ${namaTampilan}`);
+    } 
+    // 🌐 2. MODE WEB BROWSER BIASA
+    else {
+        if (audioNotif) {
+            audioNotif.play().catch(err => console.log("Gagal memutar audio browser:", err));
+        }
+        
+        if (window.Notification && Notification.permission === "granted") {
+            new Notification("💬 Pesan Masuk Baru", {
+                body: `${namaTampilan}: ${pesan}`,
+                icon: 'https://cdn-icons-png.flaticon.com/512/124/124034.png'
+            });
+        }
+        console.log(`Notifikasi Web Browser sukses dipicu untuk: ${namaTampilan}`);
     }
-    console.log(`Notifikasi Pesan Masuk Berhasil Dipicu untuk: +${nomor}`);
 }
 
 // Jalankan pengecekan status masuk admin sistem
